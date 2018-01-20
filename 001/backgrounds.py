@@ -6,19 +6,26 @@ import ctypes
 import time
 import re
 import os
+import sys
 
 def url_read(url):
 	head = {}
 	#head["User-Agent"]="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
 	request = urllib.request.Request(url, headers=head)
-	try:
-		with urllib.request.urlopen(request) as rst:
-			html = rst.read()
-	except urllib.error.HTTPError as err:
-		print("err is {}, errno is {}, err reason is {}".format(err, err.code, err.reason))
+	for tick in range(3):
+		try:
+			with urllib.request.urlopen(request, timeout=5) as rst:
+				html = rst.read()
+				return html
+		except urllib.error.HTTPError as err:
+			print("err is {}, errno is {}, err reason is {}".format(err, err.code, err.reason))
+		except urllib.error.URLError as err:
+			print("err is {}".format(err))
+			continue
+	else:
+		return None
 
-	return html
-	
+
 def find_element(data, key, re_pattern):
 	re_exp = re.compile(re_pattern)
 	index = 0
@@ -37,6 +44,8 @@ def find_element(data, key, re_pattern):
 def main():
 	host  = "https://www.bing.com"
 	html = url_read(host)
+	if None == html:
+		sys.exit(1)
 
 	name_key = b'd="sh_cp"'
 	name_pat = b'title="(.*?)"'
@@ -56,7 +65,7 @@ def main():
 	image_name += suffix[1] + suffix[2]
 	print(image_name)
 	print(image_url)
-	
+
 	image = url_read(host+image_url)
 	with open(image_name, "wb") as fd:
 		fd.write(image)
@@ -68,4 +77,8 @@ def main():
 
 
 if "__main__" == __name__:
-	main()
+	try:
+		main()
+	except Exception as main_err:
+		print(main_err)
+
