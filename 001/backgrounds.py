@@ -50,13 +50,15 @@ def main():
 	name_key = b'd="sh_cp"'
 	name_pat = b'title="(.*?)"'
 	image_name = find_element(html, name_key, name_pat)
-	image_name=image_name.translate(None, b'()')
-	image_name=image_name.replace(b'/', b'_')
-	image_name=image_name.replace(b'\xc2\xa9', b'')
-	image_name=image_name.replace("，".encode(), b'_')
-	image_name=image_name.replace(b" ", b'_')
+
 	date = time.strftime("%m-%d_")
 	image_name = date + image_name.decode()
+
+	original_str = "，/ "
+	translate_str = "_" * len(original_str)
+	drop_str = "():"
+	translate_table = str.maketrans(original_str, translate_str, drop_str)
+	image_name = image_name.translate(translate_table)
 
 	image_key = b'g_img={url'
 	image_pat = b'"(.*?\.jpg)"'
@@ -73,7 +75,7 @@ def main():
 	image_path = os.path.join(os.getcwd(), image_name)
 	print(image_path)
 	# about this function, refer to README.md
-	ctypes.windll.user32.SystemParametersInfoW(20, 0, image_path, 2)
+	ctypes.windll.user32.SystemParametersInfoW(20, 0, image_path, 1)
 
 
 if "__main__" == __name__:
