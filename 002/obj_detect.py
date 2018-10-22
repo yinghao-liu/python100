@@ -33,7 +33,7 @@ with detection_graph.as_default():
 
 
 PATH_TO_TEST_IMAGES_DIR = 'test_images'
-TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, 'bend{}.jpg'.format(i)) for i in range(2,3) ]
+TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, "{}".format(i)) for i in os.listdir(PATH_TO_TEST_IMAGES_DIR) ]
 
 
 def run_inference_for_single_image(image, graph):
@@ -61,20 +61,11 @@ def run_inference_for_single_image(image, graph):
             output_dict['detection_boxes'] = output_dict['detection_boxes'][0]
             output_dict['detection_scores'] = output_dict['detection_scores'][0]
         return output_dict
-
+colors=[(0,0,255), (0,255,0), (255,0,0), (0,255,255), (255,0,255), (255,255,0)]
 
 for image_path in TEST_IMAGE_PATHS:
-    #image = cv.imread("test_images/cx.jpg", cv.IMREAD_COLOR)
-    image = cv.imread("test_images/human.jpg", cv.IMREAD_COLOR)
-    #image = cv.imread(image_path, cv.IMREAD_COLOR)
+    image = cv.imread(image_path, cv.IMREAD_COLOR)
     image_np = cv.cvtColor(image, cv.COLOR_BGR2RGB)
-    #image = Image.open("test_images/image1.jpg")
-    #image_np = load_image_into_numpy_array(image)
-    # the array based representation of the image will be used later in order to prepare the
-    # result image with boxes and labels on it.
-    print("--------------------------")
-    # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
-    #image_np_expanded = np.expand_dims(image_np, axis=0)
     # Actual detection.
     output_dict = run_inference_for_single_image(image_np, detection_graph)
     print("-------output_dict--------")
@@ -82,11 +73,24 @@ for image_path in TEST_IMAGE_PATHS:
     print("-------output_dict--------")
     #print(type(output_dict['detection_classes']))
     px,py=image_np.shape[:2]
-    pt1=[int(px*output_dict['detection_boxes'][0][0]), int(py*output_dict['detection_boxes'][0][1])]
-    pt2=[int(px*output_dict['detection_boxes'][0][2]), int(py*output_dict['detection_boxes'][0][3])]
-    pt1.reverse()
-    pt2.reverse()
-    cv.rectangle(image_np, tuple(pt1), tuple(pt2), (255,0,0))
+    for index in range(output_dict["num_detections"]):
+        if output_dict["detection_scores"][index] < 0.5:
+            break
+        print("score is {} class is {}".format(output_dict["detection_scores"][index],\
+                category_index[output_dict["detection_classes"][index]]))
+        color=colors[output_dict["detection_classes"][index]%6]
+        pt1=[int(px*output_dict['detection_boxes'][index][0]), int(py*output_dict['detection_boxes'][index][1])]
+        pt2=[int(px*output_dict['detection_boxes'][index][2]), int(py*output_dict['detection_boxes'][index][3])]
+        pt1.reverse()
+        pt2.reverse()
+        cv.rectangle(image_np, tuple(pt1), tuple(pt2), color, 2)
+        text="{}:{}%".format(category_index[output_dict["detection_classes"][index]], \
+                             int(output_dict["detection_scores"][index]*100))
+        ret,baseline=cv.getTextSize(text, cv.FONT_HERSHEY_SIMPLEX, 1, 1 )
+        fillp1=(pt1[0], pt1[1]-ret[1])
+        fillp2=(pt1[0]+ret[0], pt1[1])
+        cv.rectangle(image_np, fillp1, fillp2, color, -1)
+        cv.putText(image_np, text, tuple(pt1), cv.FONT_HERSHEY_COMPLEX, 1, (0,0,0), 1)
     cv.namedWindow("img", cv.WINDOW_NORMAL)
     cv.resizeWindow("img", py, px)
     cv.imshow("img", cv.cvtColor(image_np, cv.COLOR_RGB2BGR))
