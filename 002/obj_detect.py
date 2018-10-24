@@ -7,20 +7,24 @@ import tensorflow as tf
 import cv2 as cv
 
 
-print("start-------------------")
+print("-----------import done------------")
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
-PATH_TO_FROZEN_GRAPH = 'ssd_mobilenet_v1_coco_2017_11_17' + '/frozen_inference_graph.pb'
+PATH_TO_FROZEN_GRAPH = os.path.join('ssd_mobilenet_v1_coco_2017_11_17', 'frozen_inference_graph.pb')
 
 # List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
+PATH_TO_LABELS = os.path.join('protobuf', 'name_map')
+
+# list of the images to run with object detection
+PATH_TO_TEST_IMAGES_DIR = 'test_images'
+TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, "{}".format(i)) for i in os.listdir(PATH_TO_TEST_IMAGES_DIR) ]
 
 category_index={}
 def create_category_index_from_labelmap(label_file):
     global category_index
-    with open("protobuf/name_map") as f:
-        category_index=eval(f.read())
+    with open(label_file) as f:
+        return eval(f.read())
 
-create_category_index_from_labelmap("protobuf/name_map")
+category_index=create_category_index_from_labelmap(PATH_TO_LABELS)
 
 detection_graph = tf.Graph()
 with detection_graph.as_default():
@@ -29,11 +33,6 @@ with detection_graph.as_default():
         serialized_graph = fid.read()
         od_graph_def.ParseFromString(serialized_graph)
         tf.import_graph_def(od_graph_def, name='')
-
-
-
-PATH_TO_TEST_IMAGES_DIR = 'test_images'
-TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, "{}".format(i)) for i in os.listdir(PATH_TO_TEST_IMAGES_DIR) ]
 
 
 def run_inference_for_single_image(image, graph):
@@ -61,8 +60,8 @@ def run_inference_for_single_image(image, graph):
             output_dict['detection_boxes'] = output_dict['detection_boxes'][0]
             output_dict['detection_scores'] = output_dict['detection_scores'][0]
         return output_dict
-colors=[(0,0,255), (0,255,0), (255,0,0), (0,255,255), (255,0,255), (255,255,0)]
 
+colors=[(0,0,255), (0,255,0), (255,0,0), (0,255,255), (255,0,255), (255,255,0)]
 for image_path in TEST_IMAGE_PATHS:
     image = cv.imread(image_path, cv.IMREAD_COLOR)
     image_np = cv.cvtColor(image, cv.COLOR_BGR2RGB)
