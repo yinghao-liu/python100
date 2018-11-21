@@ -54,7 +54,7 @@ def get_model():
     return models.Model(vgg.input, model_outputs)
 
 def gram_matrix(input_tensor):
-    # We make the image channels first 
+    # We make the image channels first
     channels = int(input_tensor.shape[-1])
     a = tf.reshape(input_tensor, [-1, channels])
     n = tf.shape(a)[0]
@@ -73,7 +73,7 @@ def get_style_loss(base_style, gram_target):
 def get_content_loss(base_content, target):
       return tf.reduce_mean(tf.square(base_content - target))
 
-def load_img(path_to_img):
+def load_img1(path_to_img):
     max_dim = 512
     img = Image.open(path_to_img)
     long = max(img.size)
@@ -89,12 +89,23 @@ def load_img(path_to_img):
     print(img.shape)
     return img
 
+def load_img(path_to_img):
+    max_dim = 512
+    img = cv.imread(path_to_img, cv.IMREAD_COLOR)
+    long = max(img.shape)
+    scale = max_dim/long
+    img = cv.resize(img, (round(img.shape[1]*scale), round(img.shape[0]*scale)), interpolation=cv.INTER_AREA)
+
+    # We need to broadcast the image array such that it has a batch dimension 
+    img = np.expand_dims(img, axis=0)
+    #print(img)
+    #print(img.dtype)
+    #print(img.shape)
+    return img.astype("float32")
+
 def load_and_process_img(path_to_img):
-   # img = cv.imread(path_to_img, cv.IMREAD_COLOR)
     img = load_img(path_to_img)
-    #img = tf.keras.applications.vgg19.preprocess_input(img.astype("float64"))
     img = tf.keras.applications.vgg19.preprocess_input(img)
-    print(img.dtype)
     return img
 
 def deprocess_img(processed_img):
@@ -150,21 +161,21 @@ def compute_loss(model, loss_weights, init_image, gram_style_features, content_f
 
     Arguments:
         model: The model that will give us access to the intermediate layers
-        loss_weights: The weights of each contribution of each loss function. 
+        loss_weights: The weights of each contribution of each loss function.
         (style weight, content weight, and total variation weight)
-        init_image: Our initial base image. This image is what we are updating with 
-        our optimization process. We apply the gradients wrt the loss we are 
+        init_image: Our initial base image. This image is what we are updating with
+        our optimization process. We apply the gradients wrt the loss we are
         calculating to this image.
-        gram_style_features: Precomputed gram matrices corresponding to the 
+        gram_style_features: Precomputed gram matrices corresponding to the
         defined style layers of interest.
-        content_features: Precomputed outputs from defined content layers of 
+        content_features: Precomputed outputs from defined content layers of
         interest.
 
     Returns:
         returns the total loss, style loss, content loss, and total variational loss
     """
     style_weight, content_weight = loss_weights
-    # Feed our init image through our model. This will give us the content and 
+    # Feed our init image through our model. This will give us the content and
     # style representations at our desired layers. Since we're using eager
     # our model is callable just like any other function!
     model_outputs = model(init_image)
@@ -200,7 +211,7 @@ def compute_grads(cfg):
     total_loss = all_loss[0]
     return tape.gradient(total_loss, cfg['init_image']), all_loss
 
-def run_style_transfer(content_path, style_path, num_iterations=200,
+def run_style_transfer(content_path, style_path, num_iterations=1000,
                        content_weight=1e3, style_weight=1e-2):
     model = get_model()
     for layer in model.layers:
@@ -214,8 +225,6 @@ def run_style_transfer(content_path, style_path, num_iterations=200,
     init_image = tfe.Variable(init_image, dtype=tf.float32)
     # Create our optimizer
     opt = tf.train.AdamOptimizer(learning_rate=5, beta1=0.99, epsilon=1e-1)
-    # For displaying intermediate images
-    iter_count = 1
 
     # Store our best result
     best_loss, best_img = float('inf'), None
@@ -231,8 +240,8 @@ def run_style_transfer(content_path, style_path, num_iterations=200,
     }
     # For displaying
     num_rows = 2
-    num_cols = 5
-    display_interval = num_iterations/(num_rows*num_cols)
+    num_cols = 3
+    display_interval = num_iterations // (num_rows*num_cols)
     start_time = time.time()
     global_start = time.time()
 
@@ -252,42 +261,36 @@ def run_style_transfer(content_path, style_path, num_iterations=200,
 
         if loss < best_loss:
             # Update best loss and best image from total loss.
+            print("descent loss")
             best_loss = loss
             best_img = deprocess_img(init_image.numpy())
 
-        if i % display_interval== 0:
-            start_time = time.time()
-
+        if (0 != i) and (0 == i % display_interval):
             # Use the .numpy() method to get the concrete numpy array
-            plot_img = init_image.numpy()
-            plot_img = deprocess_img(plot_img)
-            imgs.append(plot_img)
-            cv.imshow("111", best_img)
-            cv.waitKey()
-            #IPython.display.clear_output(wait=True)
-            #IPython.display.display_png(Image.fromarray(plot_img))
-            print('Iteration: {}'.format(i))        
-            print('Total loss: {:.4e}, ' 
+            intermediate_img = deprocess_img(init_image.numpy())
+            imgs.append(intermediate_img)
+            #cv.imshow("intermediate image {}".format(i), plot_img)
+            #cv.waitKey()
+            #cv.destroyAllWindows()
+
+            print('Total loss: {:.4e}, '
                   'style loss: {:.4e}, '
                   'content loss: {:.4e}, '
                   'time: {:.4f}s'.format(loss, style_score, content_score, time.time() - start_time))
+            start_time = time.time()
     # end  ----------
     print('Total time: {:.4f}s'.format(time.time() - global_start))
-    #IPython.display.clear_output(wait=True)
-    #plt.figure(figsize=(14,4))
     for i,img in enumerate(imgs):
-        pass
-        #cv.imshow("113", img)
-        #cv.waitKey()
-        #plt.subplot(num_rows,num_cols,i+1)
-        #plt.imshow(img)
-        #plt.xticks([])
-        #plt.yticks([])
-
-    cv.imshow("345", best_img)
+        cv.imshow("{}".format(i), img)
     cv.waitKey()
+    cv.destroyAllWindows()
+
+    cv.imshow("bestimg", best_img)
+    cv.waitKey()
+    cv.destroyAllWindows()
     return best_img, best_loss
 
 
 # main process
-run_style_transfer("./test_images/Green_Sea_Turtle_grazing_seagrass.jpg", "./test_images/The_Great_Wave_off_Kanagawa.jpg")
+final_img, final_loss = run_style_transfer("./test_images/Green_Sea_Turtle_grazing_seagrass.jpg", "./test_images/The_Great_Wave_off_Kanagawa.jpg")
+cv.imwrite("result.jpg", final_img)
