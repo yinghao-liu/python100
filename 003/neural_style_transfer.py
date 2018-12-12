@@ -206,10 +206,16 @@ def compute_loss(model, loss_weights, init_image, gram_style_features, content_f
 
 def compute_grads(cfg):
     with tf.GradientTape() as tape:
+        print("-----------start compute_loss")
         all_loss = compute_loss(**cfg)
+        print("-----------end compute_loss")
     # Compute gradients wrt input image
+    print(all_loss)
     total_loss = all_loss[0]
-    return tape.gradient(total_loss, cfg['init_image']), all_loss
+    print("gradient start")
+    a = tape.gradient(total_loss, cfg['init_image'])
+    print("gradient end")
+    return a, all_loss
 
 def run_style_transfer(content_path, style_path, num_iterations=1000,
                        content_weight=1e3, style_weight=1e-2):
@@ -253,6 +259,7 @@ def run_style_transfer(content_path, style_path, num_iterations=1000,
     for i in range(num_iterations):
         print("{}/{}".format(i,num_iterations))
         grads, all_loss = compute_grads(cfg)
+        print("-------------time loss-----------------")
         loss, style_score, content_score = all_loss
         opt.apply_gradients([(grads, init_image)])
         clipped = tf.clip_by_value(init_image, min_vals, max_vals)
@@ -292,5 +299,6 @@ def run_style_transfer(content_path, style_path, num_iterations=1000,
 
 
 # main process
-final_img, final_loss = run_style_transfer("./test_images/Green_Sea_Turtle_grazing_seagrass.jpg", "./test_images/The_Great_Wave_off_Kanagawa.jpg")
-cv.imwrite("result.jpg", final_img)
+if "__main__" == __name__:
+    final_img, final_loss = run_style_transfer("./test_images/Green_Sea_Turtle_grazing_seagrass.jpg", "./test_images/The_Great_Wave_off_Kanagawa.jpg")
+    cv.imwrite("result.jpg", final_img)
