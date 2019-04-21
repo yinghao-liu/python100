@@ -21,7 +21,7 @@ pip install tensorflow
 pip install tensorflow-gpu
 ```
 
-For detailed steps to install Tensorflow, follow the[Install OpenCV-Python 
+For detailed steps to install OpenCV, follow the [Install OpenCV-Python
 in Ubuntu](https://docs.opencv.org/4.0.0-beta/d2/de6/tutorial_py_setup_in_ubuntu.html). 
 A typical user can install OpenCV using the following command:
 
