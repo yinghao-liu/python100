@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
 import cv2 as cv
 import numpy as np
+import argparse
 
-file_name="ma420.yuv"
-width=1920
-height=1080
+def arg_parser():
+    parser = argparse.ArgumentParser(description='image to yuv')
+    parser.add_argument("-i", "--input", required=True, help="input file(yuv)")
+    parser.add_argument("-w", "--width", help="width, default=1920")
+    parser.add_argument("-e", "--height", help="height, default=1080")
+    args=parser.parse_args()
+    return args
+
+args = arg_parser()
+file_name = args.input
+width = 1920 if None == args.width else args.width
+height=1080 if None == args.height else args.height
 
 with open(file_name, "rb") as fd:
     yuv_raw=fd.read()
