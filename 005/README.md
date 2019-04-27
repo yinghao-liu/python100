@@ -2,7 +2,7 @@
 
 yuv viewer
 
-测试环境：ubuntu 18.04, python 3.6.7
+environment: ubuntu 18.04, python 3.6.7
 
 ## Setup
 ### Dependencies
@@ -21,5 +21,5 @@ sudo apt-get install python3-opencv
 just run yuviewer.py and you will see the result.
 
 ## reference
-2. [OpenCV modules](https://docs.opencv.org/3.4.3/)
-3. [Python cv2 show image in window with correct size](https://gist.github.com/kefir-/03cea3e3b17b7a74a7cdcf57a2159a79)
+1. [OpenCV modules](https://docs.opencv.org/4.1.0/)
+2. [Python cv2 show image in window with correct size](https://gist.github.com/kefir-/03cea3e3b17b7a74a7cdcf57a2159a79)
