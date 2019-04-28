@@ -16,7 +16,7 @@ sudo apt-get install python3-opencv
 ```
 
 ## Quick Start
-just run yuviewer.py and you will see the result.
+run `./yuviewer.py -h` and you will see how to use this.
 
 ## reference
 1. [OpenCV modules](https://docs.opencv.org/4.1.0/)
